@@ -3,6 +3,7 @@
 # Copyright Max Ferrer (Panda Foss) <maxi.fg13@gmail.com>
 
 ######################### Variables #########################
+VERSION='v1.0.0'
 SEARCH_AND_DOWNLOAD=('auracle'
                      'pbget'
                      'repoctl'
@@ -86,19 +87,22 @@ graphical() {
 # $1 = helper to be installed
 install() {
     local helper="$1"
-    echo -e "${BOLD}${BLUE}::${NORMAL} Installing ${helper}${CLR}"
-    git clone https://aur.archlinux.org/"${helper}".git
-    cd "${helper}" || return
-    makepkg -si
+    for element in "${ALL[@]}"; do
+        if [[ "${helper}" == "${element}" ]]; then
+            echo -e "${BOLD}${BLUE}::${NORMAL} Installing ${helper}${CLR}"
+            git clone https://aur.archlinux.org/"${helper}".git
+            cd "${helper}" || return
+            makepkg -si
+        else
+            echo "Error: ${helper} is not a valid AUR Helper"
+            exit 1
+        fi
+    done
 }
 
-# Main function
-main() {
-    check
-    s_and_d
-    s_and_b
-    wrappers
-    graphical
+# Run manager in interactive mode
+interactive_mode() {
+    print_list
     echo -n "Select option [0..${MAX_QTY}]: "
     read -r ans
     local re='^[0-9]+$'
@@ -113,4 +117,72 @@ main() {
     install "${ALL[ans]}"
 }
 
-main
+# Print all available helpers
+print_list() {
+    s_and_d
+    s_and_b
+    wrappers
+    graphical
+}
+
+# Help function
+help() {
+    local HELP=$(sed 's/^ \+//' <<<"
+            ${BOLD}AUR Helper Manager ${VERSION}${CLR}
+            * A simple way to manage your AUR Helpers
+
+            ${BOLD}OPTIONS${CLR}
+
+            If no options are entered, the script starts in interactive mode. This lists the available AUR Helpers and offers the option to install any of them.
+
+            The available options are listed below:
+
+            \t-V, --version\t\tDisplays the program version and exits.
+            \t-l, --list \t\tList available AUR Helpers.
+            \t-i, --install <helper>\tInstall the helper indicated with <helper>. Accept only one argument.
+            \t-h, --help\t\tShow this help.
+
+            ${BOLD}EXAMPLES${CLR}
+
+            * Install yay (no interactive mode)
+                \t$0 -i yay-bin
+
+            ${BOLD}DEVELOPER${CLR}
+
+            Developed by @PandaFoss
+            Source Code: https://github.com/PandaFoss/AUR-Helper-Manager
+            ")
+    echo -e "${HELP}"
+}
+
+# Main function
+main() {
+    check
+    if [[ -z "$1" ]]; then
+        interactive_mode
+    else
+        while [[ "$1" =~ ^- && ! "$1" == "--" ]]; do case $1 in
+            -V | --version )
+                echo ${VERSION}
+                exit
+                ;;
+            -l | --list )
+                print_list
+                exit
+                ;;
+            -i | --install )
+                shift
+                install "$1"
+                exit
+                ;;
+            -h | --help )
+                help
+                exit
+                ;;
+        esac; shift; done
+    fi
+    if [[ "$1" == '--' ]]; then shift; fi
+
+}
+
+main "$@"
