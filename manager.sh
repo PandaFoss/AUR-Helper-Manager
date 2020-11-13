@@ -46,7 +46,7 @@ check() {
 s_and_d() {
     echo -e "${BOLD}${BLUE}::${NORMAL} Search and download${CLR}"
     for name in "${SEARCH_AND_DOWNLOAD[@]}"; do
-        echo "${COUNT}. ${name}"
+        echo -e "${BOLD}${COUNT}.${CLR} ${name}"
         COUNT=$((COUNT+1))
     done
     echo ""
